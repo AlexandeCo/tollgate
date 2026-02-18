@@ -8,7 +8,7 @@
  */
 
 import Database from 'better-sqlite3';
-import { mkdirSync, existsSync } from 'fs';
+import { mkdirSync, existsSync, chmodSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 
@@ -31,6 +31,10 @@ function getDefaultDbPath() {
 export function createDb(dbPath = null) {
   const path = dbPath || getDefaultDbPath();
   const db = new Database(path);
+
+  // Restrict database file to owner-only (rw-------) — it contains usage metadata
+  // that should not be world-readable on multi-user systems.
+  try { chmodSync(path, 0o600); } catch {}
 
   // Enable WAL mode for better concurrent read performance
   db.pragma('journal_mode = WAL');

@@ -59,12 +59,12 @@ export async function start(config) {
   // Start both servers
   await Promise.all([
     new Promise((resolve, reject) => {
-      proxyServer.listen(proxyPort, (err) => {
+      proxyServer.listen(proxyPort, '127.0.0.1', (err) => {
         if (err) reject(err);
         else resolve();
       });
     }),
-    apiServer.listen({ port: dashboardPort, host: '0.0.0.0' }),
+    apiServer.listen({ port: dashboardPort, host: '127.0.0.1' }),
   ]);
 
   // 🐕 Startup banner

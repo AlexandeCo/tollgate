@@ -30,6 +30,30 @@ export function registerPushRoutes(app) {
     if (!endpoint || !keys?.p256dh || !keys?.auth) {
       return reply.status(400).send({ error: 'Invalid subscription object' });
     }
+
+    // Validate endpoint URL: must be HTTPS and must NOT point to localhost/private IPs.
+    // This prevents SSRF — web-push will make outbound HTTP requests to this URL.
+    try {
+      const url = new URL(endpoint);
+      if (url.protocol !== 'https:') {
+        return reply.status(400).send({ error: 'Endpoint must use HTTPS' });
+      }
+      const hostname = url.hostname.toLowerCase();
+      const isPrivate =
+        hostname === 'localhost' ||
+        hostname === '127.0.0.1' ||
+        hostname === '::1' ||
+        hostname.startsWith('169.254.') ||   // link-local / AWS metadata
+        hostname.startsWith('10.')   ||
+        hostname.startsWith('192.168.') ||
+        /^172\.(1[6-9]|2\d|3[01])\./.test(hostname);
+      if (isPrivate) {
+        return reply.status(400).send({ error: 'Endpoint must not point to private/internal addresses' });
+      }
+    } catch {
+      return reply.status(400).send({ error: 'Invalid endpoint URL' });
+    }
+
     try {
       registerSubscription({ endpoint, p256dh: keys.p256dh, auth: keys.auth });
       return reply.status(201).send({ ok: true });

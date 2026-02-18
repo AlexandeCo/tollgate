@@ -19,6 +19,7 @@
   "engines": { "node": ">=20" },
   "dependencies": {
     "fastify": "^4",
+    "@fastify/static": "^7",
     "http-proxy": "^1.18",
     "better-sqlite3": "^9",
     "web-push": "^3",

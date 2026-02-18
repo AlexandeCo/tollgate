@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🐕 Sniff — Token Budget Monitor</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      background: #0d0d1a;
+      color: #e0e0e0;
+      min-height: 100vh;
+      padding: 1.5rem;
+    }
+
+    h1 { color: #7eb8f7; font-size: 1.4rem; margin-bottom: 0.25rem; }
+    .subtitle { color: #666; font-size: 0.85rem; margin-bottom: 1.5rem; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+
+    .card {
+      background: #161625;
+      border: 1px solid #2a2a4a;
+      border-radius: 10px;
+      padding: 1.25rem;
+    }
+    .card h2 { font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.75rem; }
+
+    .big-number { font-size: 2rem; font-weight: bold; color: #7eb8f7; }
+    .label { font-size: 0.75rem; color: #666; margin-top: 0.25rem; }
+
+    .gauge-bar {
+      height: 8px;
+      background: #2a2a4a;
+      border-radius: 4px;
+      margin: 0.75rem 0;
+      overflow: hidden;
+    }
+    .gauge-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.5s ease, background 0.5s ease;
+    }
+    .good   { background: #4caf50; }
+    .warn   { background: #ff9800; }
+    .danger { background: #f44336; }
+
+    .stat-row { display: flex; justify-content: space-between; padding: 0.3rem 0; border-bottom: 1px solid #2a2a4a; }
+    .stat-row:last-child { border-bottom: none; }
+    .stat-val { color: #7eb8f7; }
+
+    .call-log { max-height: 300px; overflow-y: auto; }
+    .call-item {
+      display: flex;
+      gap: 0.75rem;
+      padding: 0.4rem 0;
+      border-bottom: 1px solid #1e1e35;
+      font-size: 0.8rem;
+      align-items: center;
+    }
+    .call-model { color: #a0c4ff; min-width: 160px; }
+    .call-tokens { color: #888; flex: 1; }
+    .call-cost { color: #4caf50; min-width: 60px; text-align: right; }
+    .call-ms   { color: #555; min-width: 60px; text-align: right; }
+
+    .events-log {
+      max-height: 200px;
+      overflow-y: auto;
+      font-size: 0.75rem;
+      color: #666;
+    }
+    .event-item { padding: 0.2rem 0; }
+    .event-item.snapshot { color: #7eb8f7; }
+    .event-item.call     { color: #4caf50; }
+    .event-item.alert    { color: #ff9800; }
+    .event-item.reset    { color: #a0ffa0; }
+
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 0.4rem;
+    }
+    .status-dot.live { background: #4caf50; animation: pulse 2s infinite; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.3; }
+    }
+
+    #connection-status { font-size: 0.75rem; color: #666; margin-bottom: 1rem; }
+
+    button {
+      background: #2a2a4a;
+      border: 1px solid #3a3a6a;
+      color: #a0c4ff;
+      padding: 0.4rem 0.9rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-family: inherit;
+      transition: background 0.2s;
+    }
+    button:hover { background: #3a3a5a; }
+  </style>
+</head>
+<body>
+  <h1>🐕 Sniff — Token Budget Monitor</h1>
+  <p class="subtitle">Point <code>ANTHROPIC_BASE_URL=http://localhost:4243</code> at Sniff to start tracking.</p>
+
+  <div id="connection-status">
+    <span class="status-dot" id="dot"></span>
+    <span id="conn-text">Connecting...</span>
+  </div>
+
+  <div class="grid">
+    <!-- Token Budget -->
+    <div class="card">
+      <h2>🔋 Token Budget</h2>
+      <div class="big-number" id="tokens-remaining">—</div>
+      <div class="label" id="tokens-label">remaining of 400,000</div>
+      <div class="gauge-bar"><div class="gauge-fill" id="token-gauge" style="width:0%"></div></div>
+      <div class="stat-row">
+        <span>Used</span>
+        <span class="stat-val" id="token-pct">—%</span>
+      </div>
+      <div class="stat-row">
+        <span>Reset in</span>
+        <span class="stat-val" id="token-reset">—</span>
+      </div>
+    </div>
+
+    <!-- Session Stats (24h) -->
+    <div class="card">
+      <h2>📊 Last 24h</h2>
+      <div class="big-number" id="total-cost">$—</div>
+      <div class="label">estimated cost</div>
+      <br>
+      <div class="stat-row"><span>Calls</span><span class="stat-val" id="total-calls">—</span></div>
+      <div class="stat-row"><span>Input tokens</span><span class="stat-val" id="total-input">—</span></div>
+      <div class="stat-row"><span>Output tokens</span><span class="stat-val" id="total-output">—</span></div>
+      <div class="stat-row"><span>P95 latency</span><span class="stat-val" id="p95">—</span></div>
+    </div>
+  </div>
+
+  <!-- Recent Calls -->
+  <div class="card" style="margin-bottom:1rem">
+    <h2>🔍 Recent Calls &nbsp; <button onclick="refreshCalls()">Refresh</button></h2>
+    <br>
+    <div class="call-log" id="call-log">
+      <div style="color:#555">No calls yet — point ANTHROPIC_BASE_URL at port 4243</div>
+    </div>
+  </div>
+
+  <!-- Live Events -->
+  <div class="card">
+    <h2>📡 Live Events</h2>
+    <div class="events-log" id="events-log">
+      <div class="event-item">Waiting for events...</div>
+    </div>
+  </div>
+
+  <script>
+    // ─── Data fetching ──────────────────────────────────────────────────────
+    async function fetchStatus() {
+      try {
+        const res = await fetch('/api/status');
+        const d   = await res.json();
+        updateStatus(d);
+      } catch {}
+    }
+
+    async function fetchStats() {
+      try {
+        const res = await fetch('/api/stats?window=24h');
+        const d   = await res.json();
+        updateStats(d);
+      } catch {}
+    }
+
+    async function refreshCalls() {
+      try {
+        const res  = await fetch('/api/calls?limit=50');
+        const d    = await res.json();
+        updateCallLog(d.calls || []);
+      } catch {}
+    }
+
+    // ─── UI updaters ────────────────────────────────────────────────────────
+    function updateStatus(d) {
+      const tokens = d.tokens || {};
+      const remaining = tokens.remaining;
+
+      document.getElementById('tokens-remaining').textContent =
+        remaining !== null ? remaining.toLocaleString() : '—';
+      document.getElementById('tokens-label').textContent =
+        `remaining of ${(tokens.limit || 400000).toLocaleString()}`;
+
+      const pct = tokens.usedPercent ?? 0;
+      document.getElementById('token-pct').textContent = `${pct}%`;
+
+      const gauge = document.getElementById('token-gauge');
+      gauge.style.width = `${Math.min(pct, 100)}%`;
+      gauge.className = 'gauge-fill ' + (pct >= 95 ? 'danger' : pct >= 80 ? 'warn' : 'good');
+
+      const secs = d.secondsUntilReset;
+      document.getElementById('token-reset').textContent = secs !== null
+        ? `${Math.floor(secs / 60)}m ${secs % 60}s`
+        : '—';
+    }
+
+    function updateStats(d) {
+      document.getElementById('total-cost').textContent  = d.totalCostUsd !== undefined ? `$${d.totalCostUsd.toFixed(3)}` : '$—';
+      document.getElementById('total-calls').textContent = d.totalCalls ?? '—';
+      document.getElementById('total-input').textContent = d.totalInputTokens  ? d.totalInputTokens.toLocaleString()  : '—';
+      document.getElementById('total-output').textContent= d.totalOutputTokens ? d.totalOutputTokens.toLocaleString() : '—';
+      document.getElementById('p95').textContent         = d.p95LatencyMs ? `${d.p95LatencyMs}ms` : '—';
+    }
+
+    function updateCallLog(calls) {
+      const el = document.getElementById('call-log');
+      if (!calls.length) {
+        el.innerHTML = '<div style="color:#555">No calls yet</div>';
+        return;
+      }
+      el.innerHTML = calls.map(c => `
+        <div class="call-item">
+          <span class="call-model">${c.model}${c.routedFrom ? ` <span style="color:#888">(↓${c.routedFrom.split('-')[2] || '?'})</span>` : ''}</span>
+          <span class="call-tokens">${(c.inputTokens||0).toLocaleString()} in / ${(c.outputTokens||0).toLocaleString()} out</span>
+          <span class="call-cost">$${(c.costUsd||0).toFixed(4)}</span>
+          <span class="call-ms">${c.latencyMs ? c.latencyMs+'ms' : '—'}</span>
+        </div>
+      `).join('');
+    }
+
+    function addEvent(type, data) {
+      const el = document.getElementById('events-log');
+      const now = new Date().toLocaleTimeString();
+      const item = document.createElement('div');
+      item.className = `event-item ${type}`;
+      const preview = typeof data === 'object' ? JSON.stringify(data).slice(0, 80) : String(data);
+      item.textContent = `[${now}] ${type}: ${preview}`;
+      el.insertBefore(item, el.firstChild);
+      // Keep max 50 events
+      while (el.children.length > 50) el.removeChild(el.lastChild);
+    }
+
+    // ─── SSE connection ─────────────────────────────────────────────────────
+    let es;
+    function connectSSE() {
+      es = new EventSource('/api/events');
+      const dot  = document.getElementById('dot');
+      const text = document.getElementById('conn-text');
+
+      es.addEventListener('connected', () => {
+        dot.className  = 'status-dot live';
+        text.textContent = 'Connected — live updates active';
+      });
+
+      es.addEventListener('snapshot', (e) => {
+        fetchStatus();
+        addEvent('snapshot', JSON.parse(e.data));
+      });
+
+      es.addEventListener('call', (e) => {
+        refreshCalls();
+        fetchStats();
+        addEvent('call', JSON.parse(e.data));
+      });
+
+      es.addEventListener('alert', (e) => {
+        addEvent('alert', JSON.parse(e.data));
+      });
+
+      es.addEventListener('reset', (e) => {
+        fetchStatus();
+        addEvent('reset', JSON.parse(e.data));
+      });
+
+      es.onerror = () => {
+        dot.className    = 'status-dot';
+        dot.style.background = '#f44336';
+        text.textContent = 'Disconnected — retrying...';
+      };
+    }
+
+    // ─── Initial load ────────────────────────────────────────────────────────
+    fetchStatus();
+    fetchStats();
+    refreshCalls();
+    connectSSE();
+
+    // Refresh status every 30s even without SSE events
+    setInterval(() => { fetchStatus(); fetchStats(); }, 30_000);
+  </script>
+</body>
+</html>

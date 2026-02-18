@@ -3,295 +3,1164 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🐕 Sniff — Token Budget Monitor</title>
+  <title>Sniff 🐕 — Token Monitor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    /* ── Reset & Tokens ──────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0a0a0f;
+      --surface:   #111118;
+      --surface2:  #18181f;
+      --border:    #1e1e2e;
+      --border2:   #2a2a3a;
+      --text:      #e2e2f0;
+      --muted:     #6b6b8a;
+      --accent:    #f59e0b;
+      --accent-dim:#7c4f05;
+      --green:     #22c55e;
+      --yellow:    #f59e0b;
+      --red:       #ef4444;
+      --orange:    #f97316;
+      --radius:    12px;
+      --radius-sm: 8px;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
     body {
-      font-family: 'SF Mono', 'Fira Code', monospace;
-      background: #0d0d1a;
-      color: #e0e0e0;
+      display: flex;
+      flex-direction: column;
       min-height: 100vh;
+    }
+
+    /* ── Alert Banner ────────────────────────────────────────────── */
+    #alert-banner {
+      display: none;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1.5rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+      letter-spacing: 0.01em;
+      border-bottom: 1px solid transparent;
+      animation: slideDown 0.3s ease;
+    }
+    #alert-banner.warning {
+      display: flex;
+      background: rgba(245,158,11,0.15);
+      border-color: rgba(245,158,11,0.4);
+      color: #fbbf24;
+    }
+    #alert-banner.danger {
+      display: flex;
+      background: rgba(239,68,68,0.15);
+      border-color: rgba(239,68,68,0.4);
+      color: #f87171;
+    }
+    @keyframes slideDown {
+      from { transform: translateY(-100%); opacity: 0; }
+      to   { transform: translateY(0);     opacity: 1; }
+    }
+
+    /* ── Header ──────────────────────────────────────────────────── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .header-logo {
+      font-size: 1.75rem;
+      line-height: 1;
+    }
+
+    .header-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
+
+    .header-sub {
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .conn-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--muted);
+      flex-shrink: 0;
+      transition: background 0.3s;
+    }
+    .live-dot.live {
+      background: var(--green);
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+    .live-dot.error {
+      background: var(--red);
+    }
+    @keyframes pulse-dot {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.5); }
+      50%       { box-shadow: 0 0 0 5px rgba(34,197,94,0);  }
+    }
+
+    .last-update {
+      font-size: 0.7rem;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ── Main Layout ─────────────────────────────────────────────── */
+    main {
+      flex: 1;
       padding: 1.5rem;
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
     }
 
-    h1 { color: #7eb8f7; font-size: 1.4rem; margin-bottom: 0.25rem; }
-    .subtitle { color: #666; font-size: 0.85rem; margin-bottom: 1.5rem; }
+    /* ── Hero Row ────────────────────────────────────────────────── */
+    .hero-row {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 1.25rem;
+      align-items: start;
+    }
 
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
-
+    /* ── Card ────────────────────────────────────────────────────── */
     .card {
-      background: #161625;
-      border: 1px solid #2a2a4a;
-      border-radius: 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
       padding: 1.25rem;
-    }
-    .card h2 { font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.75rem; }
-
-    .big-number { font-size: 2rem; font-weight: bold; color: #7eb8f7; }
-    .label { font-size: 0.75rem; color: #666; margin-top: 0.25rem; }
-
-    .gauge-bar {
-      height: 8px;
-      background: #2a2a4a;
-      border-radius: 4px;
-      margin: 0.75rem 0;
+      position: relative;
       overflow: hidden;
     }
-    .gauge-fill {
-      height: 100%;
-      border-radius: 4px;
-      transition: width 0.5s ease, background 0.5s ease;
+
+    .card-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 1rem;
     }
-    .good   { background: #4caf50; }
-    .warn   { background: #ff9800; }
-    .danger { background: #f44336; }
 
-    .stat-row { display: flex; justify-content: space-between; padding: 0.3rem 0; border-bottom: 1px solid #2a2a4a; }
-    .stat-row:last-child { border-bottom: none; }
-    .stat-val { color: #7eb8f7; }
-
-    .call-log { max-height: 300px; overflow-y: auto; }
-    .call-item {
+    /* ── Donut Gauge ─────────────────────────────────────────────── */
+    .gauge-card {
       display: flex;
-      gap: 0.75rem;
-      padding: 0.4rem 0;
-      border-bottom: 1px solid #1e1e35;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      padding: 1.5rem 1.25rem 1.25rem;
+    }
+
+    .gauge-wrap {
+      position: relative;
+      width: 200px;
+      height: 200px;
+      flex-shrink: 0;
+    }
+
+    .gauge-svg {
+      width: 200px;
+      height: 200px;
+      transform: rotate(-90deg);
+    }
+
+    .gauge-track {
+      fill: none;
+      stroke: var(--border2);
+      stroke-width: 14;
+      stroke-linecap: round;
+    }
+
+    .gauge-fill-arc {
+      fill: none;
+      stroke: var(--green);
+      stroke-width: 14;
+      stroke-linecap: round;
+      stroke-dasharray: 502.65;
+      stroke-dashoffset: 502.65;
+      transition: stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1),
+                  stroke 0.4s ease;
+    }
+
+    .gauge-center {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.1rem;
+    }
+
+    .gauge-pct {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 2.25rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1;
+      letter-spacing: -0.03em;
+    }
+
+    .gauge-sublabel {
+      font-size: 0.65rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+    }
+
+    .gauge-meta {
+      width: 100%;
+      margin-top: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .gauge-meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       font-size: 0.8rem;
+    }
+
+    .gauge-meta-key { color: var(--muted); }
+    .gauge-meta-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .countdown {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    /* ── Stats Row ───────────────────────────────────────────────── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.75rem;
+      height: 100%;
+    }
+
+    .stat-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1rem 1.1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .stat-card-label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+    }
+
+    .stat-card-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.65rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+    }
+
+    .stat-card-sub {
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    /* ── Bottom Row ──────────────────────────────────────────────── */
+    .bottom-row {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 1.25rem;
+      align-items: start;
+    }
+
+    /* ── Model Breakdown ─────────────────────────────────────────── */
+    .model-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .model-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .model-header {
+      display: flex;
+      justify-content: space-between;
       align-items: center;
     }
-    .call-model { color: #a0c4ff; min-width: 160px; }
-    .call-tokens { color: #888; flex: 1; }
-    .call-cost { color: #4caf50; min-width: 60px; text-align: right; }
-    .call-ms   { color: #555; min-width: 60px; text-align: right; }
 
-    .events-log {
-      max-height: 200px;
-      overflow-y: auto;
-      font-size: 0.75rem;
-      color: #666;
-    }
-    .event-item { padding: 0.2rem 0; }
-    .event-item.snapshot { color: #7eb8f7; }
-    .event-item.call     { color: #4caf50; }
-    .event-item.alert    { color: #ff9800; }
-    .event-item.reset    { color: #a0ffa0; }
-
-    .status-dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      display: inline-block;
-      margin-right: 0.4rem;
-    }
-    .status-dot.live { background: #4caf50; animation: pulse 2s infinite; }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50%       { opacity: 0.3; }
-    }
-
-    #connection-status { font-size: 0.75rem; color: #666; margin-bottom: 1rem; }
-
-    button {
-      background: #2a2a4a;
-      border: 1px solid #3a3a6a;
-      color: #a0c4ff;
-      padding: 0.4rem 0.9rem;
-      border-radius: 6px;
-      cursor: pointer;
+    .model-name {
       font-size: 0.8rem;
-      font-family: inherit;
-      transition: background 0.2s;
+      font-weight: 600;
+      color: var(--text);
     }
-    button:hover { background: #3a3a5a; }
+
+    .model-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+
+    .model-badge.routed {
+      background: rgba(249,115,22,0.15);
+      color: var(--orange);
+      border: 1px solid rgba(249,115,22,0.3);
+    }
+
+    .model-bar-track {
+      height: 5px;
+      background: var(--border2);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .model-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.6s ease;
+    }
+
+    .model-stats-row {
+      display: flex;
+      gap: 0.75rem;
+      font-size: 0.72rem;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .model-stats-row span { color: var(--text); }
+
+    .model-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 0.2rem 0;
+    }
+
+    /* ── Call Feed ───────────────────────────────────────────────── */
+    .call-feed {
+      max-height: 380px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border2) transparent;
+    }
+
+    .call-feed::-webkit-scrollbar { width: 5px; }
+    .call-feed::-webkit-scrollbar-track { background: transparent; }
+    .call-feed::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+    .call-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 0.5rem;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8rem;
+      animation: fadeSlideIn 0.25s ease;
+      cursor: default;
+      transition: background 0.15s;
+    }
+    .call-row:last-child { border-bottom: none; }
+    .call-row:hover { background: var(--surface2); border-radius: 6px; }
+
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .call-icon { font-size: 0.85rem; flex-shrink: 0; }
+
+    .call-model {
+      font-weight: 600;
+      color: var(--text);
+      min-width: 130px;
+      font-size: 0.78rem;
+    }
+
+    .call-routed {
+      font-size: 0.65rem;
+      font-weight: 500;
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+      background: rgba(249,115,22,0.12);
+      color: var(--orange);
+      border: 1px solid rgba(249,115,22,0.25);
+      white-space: nowrap;
+    }
+
+    .call-tokens {
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--muted);
+      flex: 1;
+      font-size: 0.75rem;
+    }
+
+    .call-cost {
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--green);
+      min-width: 64px;
+      text-align: right;
+      font-size: 0.75rem;
+    }
+
+    .call-ms {
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--muted);
+      min-width: 54px;
+      text-align: right;
+      font-size: 0.75rem;
+    }
+
+    .call-stop {
+      font-size: 0.65rem;
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+      background: var(--surface2);
+      color: var(--muted);
+      border: 1px solid var(--border2);
+      white-space: nowrap;
+      min-width: 60px;
+      text-align: center;
+    }
+    .call-stop.end_turn   { color: var(--green);  border-color: rgba(34,197,94,0.25);  background: rgba(34,197,94,0.06); }
+    .call-stop.max_tokens { color: var(--yellow); border-color: rgba(245,158,11,0.25); background: rgba(245,158,11,0.06); }
+    .call-stop.error      { color: var(--red);    border-color: rgba(239,68,68,0.25);  background: rgba(239,68,68,0.06); }
+
+    .call-time {
+      font-size: 0.65rem;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      min-width: 48px;
+      text-align: right;
+    }
+
+    /* ── Empty State ─────────────────────────────────────────────── */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+      gap: 1rem;
+      text-align: center;
+    }
+
+    .ascii-art {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      color: var(--accent);
+      line-height: 1.4;
+      text-align: left;
+      opacity: 0.8;
+    }
+
+    .empty-title {
+      font-weight: 600;
+      color: var(--text);
+      font-size: 0.9rem;
+    }
+
+    .empty-sub {
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .empty-code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 6px;
+      padding: 0.5rem 1rem;
+      color: var(--accent);
+    }
+
+    /* ── Footer ──────────────────────────────────────────────────── */
+    footer {
+      padding: 0.75rem 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.72rem;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--surface);
+    }
+
+    /* ── Request gauge bar ───────────────────────────────────────── */
+    .req-bar-track {
+      height: 4px;
+      background: var(--border2);
+      border-radius: 2px;
+      margin-top: 0.75rem;
+      overflow: hidden;
+    }
+    .req-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      transition: width 0.6s ease;
+    }
+
+    /* ── Utility ──────────────────────────────────────────────────── */
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    .accent-text { color: var(--accent); }
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+    .refresh-btn {
+      font-size: 0.7rem;
+      color: var(--muted);
+      background: none;
+      border: 1px solid var(--border2);
+      border-radius: 6px;
+      padding: 0.25rem 0.6rem;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      transition: all 0.15s;
+    }
+    .refresh-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* Subtle accent glow on gauge card */
+    .gauge-card::before {
+      content: '';
+      position: absolute;
+      top: -1px; left: -1px; right: -1px;
+      height: 2px;
+      border-radius: var(--radius) var(--radius) 0 0;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      opacity: 0.6;
+    }
   </style>
 </head>
 <body>
-  <h1>🐕 Sniff — Token Budget Monitor</h1>
-  <p class="subtitle">Point <code>ANTHROPIC_BASE_URL=http://localhost:4243</code> at Sniff to start tracking.</p>
 
-  <div id="connection-status">
-    <span class="status-dot" id="dot"></span>
-    <span id="conn-text">Connecting...</span>
+  <!-- Alert Banner -->
+  <div id="alert-banner">
+    <span id="alert-icon">🦴</span>
+    <span id="alert-text">WOOF! Token budget running low</span>
   </div>
 
-  <div class="grid">
-    <!-- Token Budget -->
-    <div class="card">
-      <h2>🔋 Token Budget</h2>
-      <div class="big-number" id="tokens-remaining">—</div>
-      <div class="label" id="tokens-label">remaining of 400,000</div>
-      <div class="gauge-bar"><div class="gauge-fill" id="token-gauge" style="width:0%"></div></div>
-      <div class="stat-row">
-        <span>Used</span>
-        <span class="stat-val" id="token-pct">—%</span>
-      </div>
-      <div class="stat-row">
-        <span>Reset in</span>
-        <span class="stat-val" id="token-reset">—</span>
+  <!-- Header -->
+  <header>
+    <div class="header-left">
+      <div class="header-logo">🐕</div>
+      <div>
+        <div class="header-title">Sniff</div>
+        <div class="header-sub">Token Monitor</div>
       </div>
     </div>
-
-    <!-- Session Stats (24h) -->
-    <div class="card">
-      <h2>📊 Last 24h</h2>
-      <div class="big-number" id="total-cost">$—</div>
-      <div class="label">estimated cost</div>
-      <br>
-      <div class="stat-row"><span>Calls</span><span class="stat-val" id="total-calls">—</span></div>
-      <div class="stat-row"><span>Input tokens</span><span class="stat-val" id="total-input">—</span></div>
-      <div class="stat-row"><span>Output tokens</span><span class="stat-val" id="total-output">—</span></div>
-      <div class="stat-row"><span>P95 latency</span><span class="stat-val" id="p95">—</span></div>
+    <div class="header-right">
+      <span class="last-update" id="last-update">—</span>
+      <div class="conn-badge">
+        <div class="live-dot" id="live-dot"></div>
+        <span id="conn-text">connecting</span>
+      </div>
     </div>
-  </div>
+  </header>
 
-  <!-- Recent Calls -->
-  <div class="card" style="margin-bottom:1rem">
-    <h2>🔍 Recent Calls &nbsp; <button onclick="refreshCalls()">Refresh</button></h2>
-    <br>
-    <div class="call-log" id="call-log">
-      <div style="color:#555">No calls yet — point ANTHROPIC_BASE_URL at port 4243</div>
-    </div>
-  </div>
+  <!-- Main Content -->
+  <main>
 
-  <!-- Live Events -->
-  <div class="card">
-    <h2>📡 Live Events</h2>
-    <div class="events-log" id="events-log">
-      <div class="event-item">Waiting for events...</div>
+    <!-- Hero Row: Gauge + Stats -->
+    <div class="hero-row">
+
+      <!-- Donut Gauge -->
+      <div class="card gauge-card">
+        <div class="card-label">🔋 Token Budget</div>
+        <div class="gauge-wrap">
+          <svg class="gauge-svg" viewBox="0 0 200 200">
+            <circle class="gauge-track"    cx="100" cy="100" r="80"/>
+            <circle class="gauge-fill-arc" cx="100" cy="100" r="80" id="gauge-arc"/>
+          </svg>
+          <div class="gauge-center">
+            <div class="gauge-pct" id="gauge-pct">—</div>
+            <div class="gauge-sublabel">used</div>
+          </div>
+        </div>
+        <div class="gauge-meta">
+          <div class="gauge-meta-row">
+            <span class="gauge-meta-key">Remaining</span>
+            <span class="gauge-meta-val" id="tokens-remaining">—</span>
+          </div>
+          <div class="gauge-meta-row">
+            <span class="gauge-meta-key">Limit</span>
+            <span class="gauge-meta-val" id="tokens-limit">—</span>
+          </div>
+          <div class="gauge-meta-row">
+            <span class="gauge-meta-key">Resets in</span>
+            <span class="countdown" id="countdown">—</span>
+          </div>
+          <!-- Request budget mini bar -->
+          <div class="model-divider" style="margin-top:0.5rem"></div>
+          <div class="gauge-meta-row" style="margin-top:0.2rem">
+            <span class="gauge-meta-key">Requests</span>
+            <span class="gauge-meta-val" id="req-remaining">—</span>
+          </div>
+          <div class="req-bar-track">
+            <div class="req-bar-fill" id="req-bar" style="width:0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats Cards -->
+      <div style="display:flex; flex-direction:column; gap:0.75rem; height:100%">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-card-label">Total Calls</div>
+            <div class="stat-card-value" id="stat-calls">—</div>
+            <div class="stat-card-sub">last hour</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-label">Total Tokens</div>
+            <div class="stat-card-value" id="stat-tokens">—</div>
+            <div class="stat-card-sub" id="stat-tokens-sub">in + out</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-label">Total Cost</div>
+            <div class="stat-card-value accent-text" id="stat-cost">—</div>
+            <div class="stat-card-sub">estimated USD</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-label">Avg Latency</div>
+            <div class="stat-card-value" id="stat-latency">—</div>
+            <div class="stat-card-sub" id="stat-p95">p95: —</div>
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
+
+    <!-- Bottom Row: Model Breakdown + Call Feed -->
+    <div class="bottom-row">
+
+      <!-- Model Breakdown -->
+      <div class="card">
+        <div class="section-header">
+          <div class="card-label" style="margin-bottom:0">📦 Model Breakdown</div>
+        </div>
+        <div class="model-list" id="model-list">
+          <div style="color:var(--muted);font-size:0.8rem;text-align:center;padding:1rem 0">No data yet</div>
+        </div>
+      </div>
+
+      <!-- Live Call Feed -->
+      <div class="card">
+        <div class="section-header">
+          <div class="card-label" style="margin-bottom:0">🔍 Live Call Feed</div>
+          <button class="refresh-btn" onclick="refreshCalls()">↻ refresh</button>
+        </div>
+        <div class="call-feed" id="call-feed">
+          <!-- empty state -->
+          <div class="empty-state" id="empty-state">
+            <pre class="ascii-art">  / \__
+ (    @\___    sniff sniff...
+ /         O
+/   (_____/
+/_____/   U</pre>
+            <div class="empty-title">Sniff is on the trail...</div>
+            <div class="empty-sub">Waiting for the first API call.<br>Point your client at Sniff:</div>
+            <div class="empty-code">ANTHROPIC_BASE_URL=http://localhost:4243</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <span>🐕 Sniff is on the trail · proxy: localhost:4243</span>
+    <span id="footer-uptime">dashboard: localhost:4244</span>
+  </footer>
 
   <script>
-    // ─── Data fetching ──────────────────────────────────────────────────────
+  (() => {
+    // ── State ──────────────────────────────────────────────────────
+    let calls = [];
+    let stats = {};
+    let statusData = {};
+    let sseConnected = false;
+    let countdownTimer = null;
+    let secsLeft = null;
+
+    // ── Model palette ──────────────────────────────────────────────
+    const MODEL_COLORS = {
+      'claude-opus':   '#a78bfa',  // purple
+      'claude-sonnet': '#f59e0b',  // amber
+      'claude-haiku':  '#22c55e',  // green
+    };
+
+    function modelColor(name) {
+      const lc = (name || '').toLowerCase();
+      if (lc.includes('opus'))   return MODEL_COLORS['claude-opus'];
+      if (lc.includes('sonnet')) return MODEL_COLORS['claude-sonnet'];
+      if (lc.includes('haiku'))  return MODEL_COLORS['claude-haiku'];
+      return '#6b6b8a';
+    }
+
+    function modelShortName(name) {
+      const lc = (name || '').toLowerCase();
+      if (lc.includes('opus'))   return 'Opus';
+      if (lc.includes('sonnet')) return 'Sonnet';
+      if (lc.includes('haiku'))  return 'Haiku';
+      return name || 'Unknown';
+    }
+
+    function fmtNum(n, decimals = 0) {
+      if (n === undefined || n === null) return '—';
+      return Number(n).toLocaleString('en-US', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+      });
+    }
+
+    function fmtK(n) {
+      if (n === undefined || n === null) return '—';
+      if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
+      if (n >= 1_000)     return (n / 1_000).toFixed(1) + 'K';
+      return String(n);
+    }
+
+    function fmtMs(ms) {
+      if (!ms) return '—';
+      return ms >= 1000 ? (ms / 1000).toFixed(1) + 's' : ms + 'ms';
+    }
+
+    function timeAgo(ts) {
+      const diff = Date.now() - new Date(ts).getTime();
+      const s = Math.floor(diff / 1000);
+      if (s < 60)  return s + 's ago';
+      if (s < 3600) return Math.floor(s / 60) + 'm ago';
+      return Math.floor(s / 3600) + 'h ago';
+    }
+
+    // ── Gauge ──────────────────────────────────────────────────────
+    const CIRCUMFERENCE = 2 * Math.PI * 80; // ≈ 502.65
+
+    function setGauge(pct) {
+      const arc   = document.getElementById('gauge-arc');
+      const pctEl = document.getElementById('gauge-pct');
+      const clamped = Math.min(Math.max(pct || 0, 0), 100);
+      const offset  = CIRCUMFERENCE * (1 - clamped / 100);
+
+      arc.style.strokeDashoffset = offset;
+
+      let color;
+      if (clamped >= 90)      color = 'var(--red)';
+      else if (clamped >= 70) color = 'var(--yellow)';
+      else if (clamped >= 50) color = 'var(--orange)';
+      else                    color = 'var(--green)';
+      arc.style.stroke = color;
+
+      pctEl.textContent = pct !== undefined && pct !== null ? `${Math.round(pct)}%` : '—';
+    }
+
+    // ── Countdown ──────────────────────────────────────────────────
+    function startCountdown(secs) {
+      secsLeft = secs;
+      if (countdownTimer) clearInterval(countdownTimer);
+      renderCountdown();
+      countdownTimer = setInterval(() => {
+        if (secsLeft === null) return;
+        secsLeft = Math.max(0, secsLeft - 1);
+        renderCountdown();
+      }, 1000);
+    }
+
+    function renderCountdown() {
+      const el = document.getElementById('countdown');
+      if (secsLeft === null) { el.textContent = '—'; return; }
+      const m = Math.floor(secsLeft / 60);
+      const s = secsLeft % 60;
+      el.textContent = `${m}m ${String(s).padStart(2,'0')}s`;
+    }
+
+    // ── Update Status ──────────────────────────────────────────────
+    function updateStatus(d) {
+      statusData = d || {};
+      const tokens   = d.tokens   || {};
+      const requests = d.requests || {};
+      const alerts   = d.alerts   || {};
+
+      // Gauge
+      setGauge(tokens.usedPercent);
+
+      // Meta
+      document.getElementById('tokens-remaining').textContent =
+        tokens.remaining !== undefined ? fmtNum(tokens.remaining) : '—';
+      document.getElementById('tokens-limit').textContent =
+        tokens.limit !== undefined ? fmtNum(tokens.limit) : '—';
+
+      // Countdown
+      if (d.secondsUntilReset !== undefined && d.secondsUntilReset !== null) {
+        startCountdown(d.secondsUntilReset);
+      }
+
+      // Request bar
+      const reqPct = requests.usedPercent || 0;
+      document.getElementById('req-remaining').textContent =
+        requests.remaining !== undefined ? fmtNum(requests.remaining) + ' rem' : '—';
+      document.getElementById('req-bar').style.width = Math.min(reqPct, 100) + '%';
+
+      // Alert banner
+      const banner = document.getElementById('alert-banner');
+      const alertText = document.getElementById('alert-text');
+      const pct = tokens.usedPercent || 0;
+
+      if (alerts.routingActive) {
+        banner.className = 'danger';
+        alertText.textContent = `🦴 WOOF! ${Math.round(pct)}% consumed — routing to Haiku to save your biscuits`;
+      } else if (alerts.warningFired || pct >= 80) {
+        banner.className = 'warning';
+        alertText.textContent = `🦴 WOOF! ${Math.round(pct)}% consumed — getting close, sniff sniff`;
+      } else {
+        banner.className = '';
+        banner.style.display = 'none';
+        return;
+      }
+      banner.style.display = '';
+    }
+
+    // ── Update Stats ───────────────────────────────────────────────
+    function updateStats(d) {
+      stats = d || {};
+      const totalTok = (d.totalInputTokens || 0) + (d.totalOutputTokens || 0);
+
+      document.getElementById('stat-calls').textContent   = fmtNum(d.totalCalls);
+      document.getElementById('stat-tokens').textContent  = fmtK(totalTok);
+      document.getElementById('stat-tokens-sub').textContent =
+        `${fmtK(d.totalInputTokens)} in · ${fmtK(d.totalOutputTokens)} out`;
+      document.getElementById('stat-cost').textContent    =
+        d.totalCostUsd !== undefined ? `$${Number(d.totalCostUsd).toFixed(3)}` : '—';
+      document.getElementById('stat-latency').textContent = fmtMs(d.p50LatencyMs);
+      document.getElementById('stat-p95').textContent     = `p95: ${fmtMs(d.p95LatencyMs)}`;
+
+      // Model breakdown
+      renderModelBreakdown(d.byModel || {});
+    }
+
+    // ── Model Breakdown ────────────────────────────────────────────
+    function renderModelBreakdown(byModel) {
+      const el = document.getElementById('model-list');
+      const entries = Object.entries(byModel);
+      if (!entries.length) {
+        el.innerHTML = '<div style="color:var(--muted);font-size:0.8rem;text-align:center;padding:1rem 0">No data yet</div>';
+        return;
+      }
+
+      const maxCalls = Math.max(...entries.map(([,v]) => v.calls || 0), 1);
+      const totalCost = entries.reduce((sum, [,v]) => sum + (v.costUsd || 0), 0);
+
+      el.innerHTML = entries.map(([model, v], i) => {
+        const color = modelColor(model);
+        const shortName = modelShortName(model);
+        const pct = Math.round(((v.calls || 0) / maxCalls) * 100);
+        const costShare = totalCost > 0 ? Math.round(((v.costUsd || 0) / totalCost) * 100) : 0;
+        const isRouted = calls.some(c => c.routedFrom && c.model === model);
+
+        return `
+          <div class="model-row">
+            <div class="model-header">
+              <span class="model-name" style="color:${color}">${shortName}</span>
+              ${isRouted ? '<span class="model-badge routed">↓ routed</span>' : ''}
+            </div>
+            <div class="model-bar-track">
+              <div class="model-bar-fill" style="width:${pct}%;background:${color}"></div>
+            </div>
+            <div class="model-stats-row">
+              <span><span>${v.calls || 0}</span> calls</span>
+              <span><span>$${(v.costUsd || 0).toFixed(3)}</span></span>
+              <span><span>${costShare}%</span> cost</span>
+            </div>
+          </div>
+          ${i < entries.length - 1 ? '<div class="model-divider"></div>' : ''}
+        `;
+      }).join('');
+    }
+
+    // ── Call Feed ──────────────────────────────────────────────────
+    function renderCallFeed() {
+      const feed  = document.getElementById('call-feed');
+      const empty = document.getElementById('empty-state');
+
+      if (!calls.length) {
+        if (!document.getElementById('empty-state')) {
+          feed.innerHTML = `
+            <div class="empty-state" id="empty-state">
+              <pre class="ascii-art">  / \\__
+ (    @\\___    sniff sniff...
+ /         O
+/   (_____/
+/_____/   U</pre>
+              <div class="empty-title">Sniff is on the trail...</div>
+              <div class="empty-sub">Waiting for the first API call.<br>Point your client at Sniff:</div>
+              <div class="empty-code">ANTHROPIC_BASE_URL=http://localhost:4243</div>
+            </div>`;
+        }
+        return;
+      }
+
+      // Remove empty state if present
+      const es = feed.querySelector('.empty-state');
+      if (es) es.remove();
+
+      // Render rows
+      const existing = new Set([...feed.querySelectorAll('.call-row')].map(el => el.dataset.ts));
+      let changed = false;
+
+      calls.forEach((c, i) => {
+        const key = c.ts || i;
+        if (existing.has(String(key))) return;
+
+        const row = document.createElement('div');
+        row.className = 'call-row';
+        row.dataset.ts = key;
+
+        const shortModel = modelShortName(c.model);
+        const stopClass  = (c.stopReason || '').replace('_turn','').replace('_', '-');
+
+        row.innerHTML = `
+          <span class="call-icon">🔍</span>
+          <span class="call-model" style="color:${modelColor(c.model)}">${shortModel}</span>
+          ${c.routedFrom ? `<span class="call-routed">↓ ${modelShortName(c.routedFrom)}</span>` : ''}
+          <span class="call-tokens">${fmtNum(c.inputTokens)} in / ${fmtNum(c.outputTokens)} out</span>
+          <span class="call-cost">$${(c.costUsd || 0).toFixed(4)}</span>
+          <span class="call-ms">${fmtMs(c.latencyMs)}</span>
+          <span class="call-stop ${c.stopReason || ''}">${c.stopReason || '—'}</span>
+          <span class="call-time">${c.ts ? timeAgo(c.ts) : ''}</span>
+        `;
+
+        feed.insertBefore(row, feed.firstChild);
+        changed = true;
+      });
+
+      // Trim to 50 rows
+      const rows = feed.querySelectorAll('.call-row');
+      if (rows.length > 50) {
+        [...rows].slice(50).forEach(r => r.remove());
+      }
+    }
+
+    function prependCall(c) {
+      // Add to beginning of calls array (newest first)
+      calls.unshift(c);
+      if (calls.length > 100) calls.pop();
+      renderCallFeed();
+    }
+
+    // ── Connection badge ───────────────────────────────────────────
+    function setConn(state) {
+      const dot  = document.getElementById('live-dot');
+      const text = document.getElementById('conn-text');
+      sseConnected = state === 'live';
+      dot.className = 'live-dot ' + (state === 'live' ? 'live' : state === 'error' ? 'error' : '');
+      text.textContent = {
+        live:  'live',
+        error: 'reconnecting',
+        idle:  'polling'
+      }[state] || 'connecting';
+    }
+
+    function touchLastUpdate() {
+      document.getElementById('last-update').textContent =
+        'updated ' + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+    }
+
+    // ── Fetch helpers ──────────────────────────────────────────────
     async function fetchStatus() {
       try {
         const res = await fetch('/api/status');
-        const d   = await res.json();
+        if (!res.ok) throw new Error(res.status);
+        const d = await res.json();
         updateStatus(d);
-      } catch {}
+        touchLastUpdate();
+        if (!sseConnected) setConn('idle');
+      } catch (e) {
+        console.warn('fetchStatus failed:', e);
+      }
     }
 
     async function fetchStats() {
       try {
-        const res = await fetch('/api/stats?window=24h');
-        const d   = await res.json();
+        const res = await fetch('/api/stats?window=1h');
+        if (!res.ok) throw new Error(res.status);
+        const d = await res.json();
         updateStats(d);
-      } catch {}
+      } catch (e) {
+        console.warn('fetchStats failed:', e);
+      }
     }
 
     async function refreshCalls() {
       try {
-        const res  = await fetch('/api/calls?limit=50');
-        const d    = await res.json();
-        updateCallLog(d.calls || []);
-      } catch {}
-    }
-
-    // ─── UI updaters ────────────────────────────────────────────────────────
-    function updateStatus(d) {
-      const tokens = d.tokens || {};
-      const remaining = tokens.remaining;
-
-      document.getElementById('tokens-remaining').textContent =
-        remaining !== null ? remaining.toLocaleString() : '—';
-      document.getElementById('tokens-label').textContent =
-        `remaining of ${(tokens.limit || 400000).toLocaleString()}`;
-
-      const pct = tokens.usedPercent ?? 0;
-      document.getElementById('token-pct').textContent = `${pct}%`;
-
-      const gauge = document.getElementById('token-gauge');
-      gauge.style.width = `${Math.min(pct, 100)}%`;
-      gauge.className = 'gauge-fill ' + (pct >= 95 ? 'danger' : pct >= 80 ? 'warn' : 'good');
-
-      const secs = d.secondsUntilReset;
-      document.getElementById('token-reset').textContent = secs !== null
-        ? `${Math.floor(secs / 60)}m ${secs % 60}s`
-        : '—';
-    }
-
-    function updateStats(d) {
-      document.getElementById('total-cost').textContent  = d.totalCostUsd !== undefined ? `$${d.totalCostUsd.toFixed(3)}` : '$—';
-      document.getElementById('total-calls').textContent = d.totalCalls ?? '—';
-      document.getElementById('total-input').textContent = d.totalInputTokens  ? d.totalInputTokens.toLocaleString()  : '—';
-      document.getElementById('total-output').textContent= d.totalOutputTokens ? d.totalOutputTokens.toLocaleString() : '—';
-      document.getElementById('p95').textContent         = d.p95LatencyMs ? `${d.p95LatencyMs}ms` : '—';
-    }
-
-    function updateCallLog(calls) {
-      const el = document.getElementById('call-log');
-      if (!calls.length) {
-        el.innerHTML = '<div style="color:#555">No calls yet</div>';
-        return;
+        const res = await fetch('/api/calls?limit=50');
+        if (!res.ok) throw new Error(res.status);
+        const d = await res.json();
+        const list = Array.isArray(d) ? d : (d.calls || []);
+        calls = list;
+        renderCallFeed();
+      } catch (e) {
+        console.warn('refreshCalls failed:', e);
       }
-      el.innerHTML = calls.map(c => `
-        <div class="call-item">
-          <span class="call-model">${c.model}${c.routedFrom ? ` <span style="color:#888">(↓${c.routedFrom.split('-')[2] || '?'})</span>` : ''}</span>
-          <span class="call-tokens">${(c.inputTokens||0).toLocaleString()} in / ${(c.outputTokens||0).toLocaleString()} out</span>
-          <span class="call-cost">$${(c.costUsd||0).toFixed(4)}</span>
-          <span class="call-ms">${c.latencyMs ? c.latencyMs+'ms' : '—'}</span>
-        </div>
-      `).join('');
     }
 
-    function addEvent(type, data) {
-      const el = document.getElementById('events-log');
-      const now = new Date().toLocaleTimeString();
-      const item = document.createElement('div');
-      item.className = `event-item ${type}`;
-      const preview = typeof data === 'object' ? JSON.stringify(data).slice(0, 80) : String(data);
-      item.textContent = `[${now}] ${type}: ${preview}`;
-      el.insertBefore(item, el.firstChild);
-      // Keep max 50 events
-      while (el.children.length > 50) el.removeChild(el.lastChild);
-    }
-
-    // ─── SSE connection ─────────────────────────────────────────────────────
+    // ── SSE ────────────────────────────────────────────────────────
     let es;
+    let reconnectDelay = 1000;
+
     function connectSSE() {
+      if (es) { try { es.close(); } catch(e) {} }
+
       es = new EventSource('/api/events');
-      const dot  = document.getElementById('dot');
-      const text = document.getElementById('conn-text');
 
       es.addEventListener('connected', () => {
-        dot.className  = 'status-dot live';
-        text.textContent = 'Connected — live updates active';
+        setConn('live');
+        reconnectDelay = 1000;
+      });
+
+      es.addEventListener('open', () => {
+        setConn('live');
+        reconnectDelay = 1000;
       });
 
       es.addEventListener('snapshot', (e) => {
-        fetchStatus();
-        addEvent('snapshot', JSON.parse(e.data));
+        try {
+          const d = JSON.parse(e.data);
+          updateStatus(d);
+          touchLastUpdate();
+        } catch(err) {}
       });
 
       es.addEventListener('call', (e) => {
-        refreshCalls();
-        fetchStats();
-        addEvent('call', JSON.parse(e.data));
+        try {
+          const d = JSON.parse(e.data);
+          prependCall(d);
+          touchLastUpdate();
+          fetchStats();  // update model breakdown + cost
+        } catch(err) {}
       });
 
-      es.addEventListener('alert', (e) => {
-        addEvent('alert', JSON.parse(e.data));
-      });
-
-      es.addEventListener('reset', (e) => {
+      es.addEventListener('reset', () => {
         fetchStatus();
-        addEvent('reset', JSON.parse(e.data));
+        fetchStats();
       });
 
       es.onerror = () => {
-        dot.className    = 'status-dot';
-        dot.style.background = '#f44336';
-        text.textContent = 'Disconnected — retrying...';
+        setConn('error');
+        try { es.close(); } catch(e) {}
+        // Exponential backoff reconnect
+        setTimeout(connectSSE, reconnectDelay);
+        reconnectDelay = Math.min(reconnectDelay * 2, 30_000);
       };
     }
 
-    // ─── Initial load ────────────────────────────────────────────────────────
+    // ── Init ───────────────────────────────────────────────────────
     fetchStatus();
     fetchStats();
     refreshCalls();
     connectSSE();
 
-    // Refresh status every 30s even without SSE events
-    setInterval(() => { fetchStatus(); fetchStats(); }, 30_000);
+    // Fallback poll every 30s
+    setInterval(() => {
+      fetchStatus();
+      fetchStats();
+    }, 30_000);
+
+    // Tick the footer uptime
+    const startTime = Date.now();
+    setInterval(() => {
+      const s = Math.floor((Date.now() - startTime) / 1000);
+      const m = Math.floor(s / 60);
+      const h = Math.floor(m / 60);
+      const label = h > 0
+        ? `dashboard up ${h}h ${m % 60}m`
+        : m > 0
+        ? `dashboard up ${m}m ${s % 60}s`
+        : `dashboard up ${s}s`;
+      document.getElementById('footer-uptime').textContent = label;
+    }, 1000);
+
+  })();
   </script>
 </body>
 </html>

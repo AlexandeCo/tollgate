@@ -13,6 +13,7 @@ import chalk from 'chalk';
 import { createDb }        from './db.js';
 import { createProxy }     from './proxy.js';
 import { createApiServer } from './api/server.js';
+import { initPush }        from './push.js';
 
 /**
  * Start Sniff.
@@ -27,6 +28,11 @@ export async function start(config) {
   // Initialize database
   const dbPath = config?.db?.path || null;
   const db = createDb(dbPath);
+
+  // Initialize push notifications (generates VAPID keys on first run)
+  try { initPush(db); } catch (err) {
+    console.error(chalk.yellow('Warning: push notifications unavailable:', err.message));
+  }
 
   // Purge old records on startup
   const retentionDays = config?.db?.retentionDays || 30;

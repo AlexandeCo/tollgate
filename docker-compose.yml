@@ -1,0 +1,13 @@
+version: '3.8'
+services:
+  sniff:
+    build: .
+    ports:
+      - "4243:4243"
+      - "4244:4244"
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    volumes:
+      - sniff-data:/root/.sniff
+volumes:
+  sniff-data:

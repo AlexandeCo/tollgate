@@ -18,6 +18,7 @@ import { createStatusHandler }  from './status.js';
 import { createCallsHandler }   from './calls.js';
 import { createStatsHandler }   from './stats.js';
 import { eventsHandler }        from './events.js';
+import { registerPushRoutes }   from './push.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -81,6 +82,9 @@ export async function createApiServer(db, emitter, config) {
   app.get('/api/health', async (request, reply) => {
     return reply.send({ status: 'ok', name: 'sniff', version: '0.1.0' });
   });
+
+  // Push notification routes
+  registerPushRoutes(app);
 
   // Wire emitter events → SSE broadcast
   const { emit: sseEmit } = await import('./events.js');

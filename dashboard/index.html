@@ -611,6 +611,25 @@
       background: linear-gradient(90deg, transparent, var(--accent), transparent);
       opacity: 0.6;
     }
+
+    /* ── Push notification bell ──────────────────────────────────── */
+    #push-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      border: 1px solid var(--border2);
+      background: var(--surface2);
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-family: 'JetBrains Mono', monospace;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s, background 0.2s;
+    }
+    #push-btn:hover { border-color: var(--accent); color: var(--accent); }
+    #push-btn.active { color: var(--green); border-color: var(--green); }
+    #push-btn.unsupported { opacity: 0.4; cursor: not-allowed; }
   </style>
 </head>
 <body>
@@ -632,6 +651,7 @@
     </div>
     <div class="header-right">
       <span class="last-update" id="last-update">—</span>
+      <button id="push-btn" title="Toggle push notifications">🔔 <span id="push-label">Notifications</span></button>
       <div class="conn-badge">
         <div class="live-dot" id="live-dot"></div>
         <span id="conn-text">connecting</span>
@@ -1145,6 +1165,80 @@
       fetchStatus();
       fetchStats();
     }, 30_000);
+
+    // ── Push Notifications ─────────────────────────────────────────
+    (async function initPushUI() {
+      const btn = document.getElementById('push-btn');
+      const lbl = document.getElementById('push-label');
+
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        btn.classList.add('unsupported');
+        lbl.textContent = 'N/A';
+        btn.title = 'Push notifications not supported in this browser';
+        return;
+      }
+
+      // Reflect current subscription state
+      async function refreshPushState() {
+        const reg = await navigator.serviceWorker.getRegistration('/sw.js');
+        if (!reg) { lbl.textContent = 'Off'; btn.classList.remove('active'); return; }
+        const sub = await reg.pushManager.getSubscription();
+        if (sub) { lbl.textContent = 'On'; btn.classList.add('active'); }
+        else      { lbl.textContent = 'Off'; btn.classList.remove('active'); }
+      }
+
+      // Register service worker
+      await navigator.serviceWorker.register('/sw.js');
+      await refreshPushState();
+
+      btn.addEventListener('click', async () => {
+        const reg = await navigator.serviceWorker.ready;
+        const existing = await reg.pushManager.getSubscription();
+
+        if (existing) {
+          // Unsubscribe
+          await existing.unsubscribe();
+          await fetch('/api/push/subscribe', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ endpoint: existing.endpoint }),
+          }).catch(() => {});
+          lbl.textContent = 'Off';
+          btn.classList.remove('active');
+          return;
+        }
+
+        // Request permission
+        const perm = await Notification.requestPermission();
+        if (perm !== 'granted') {
+          lbl.textContent = 'Denied';
+          return;
+        }
+
+        // Get VAPID public key
+        const { publicKey } = await fetch('/api/push/vapid-key').then(r => r.json());
+        if (!publicKey) { lbl.textContent = 'Error'; return; }
+
+        // Convert VAPID key to Uint8Array
+        const key = Uint8Array.from(atob(publicKey.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
+
+        // Subscribe
+        const sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: key,
+        });
+
+        // Send to server
+        await fetch('/api/push/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(sub.toJSON()),
+        });
+
+        lbl.textContent = 'On';
+        btn.classList.add('active');
+      });
+    })();
 
     // Tick the footer uptime
     const startTime = Date.now();

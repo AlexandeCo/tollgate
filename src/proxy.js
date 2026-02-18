@@ -16,6 +16,7 @@ import chalk from 'chalk';
 import { extractHeaders, extractBody, isStreaming, StreamTap } from './extractor.js';
 import { maybeReroute, buildRoutingHeaders, modelTier } from './router.js';
 import { estimateCost, formatCost } from './pricing.js';
+import { notifyAll } from './push.js';
 
 const TARGET = 'https://api.anthropic.com';
 
@@ -298,6 +299,7 @@ function checkAlerts(snapshot, config, emitter, db) {
       message: `${warningPct}% of token budget used`,
     });
     try { db.insertAlert({ type: 'token_warning', threshold: warningPct, message: `${usedPercent}% used` }); } catch {}
+    notifyAll('token_warning', `${warningPct}% of token budget used (${remaining?.toLocaleString()} tokens remaining)`).catch(() => {});
   }
 
   // Critical alert
@@ -310,6 +312,7 @@ function checkAlerts(snapshot, config, emitter, db) {
       message: `${criticalPct}% of token budget used — critical!`,
     });
     try { db.insertAlert({ type: 'token_critical', threshold: criticalPct, message: `${usedPercent}% used` }); } catch {}
+    notifyAll('token_critical', `CRITICAL: ${criticalPct}% of token budget used — only ${remaining?.toLocaleString()} tokens remaining!`).catch(() => {});
   }
 
   // Reset detection: if usage dropped below warning threshold, clear dedup

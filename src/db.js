@@ -76,6 +76,14 @@ export function createDb(dbPath = null) {
       resolved   INTEGER DEFAULT 0
     );
 
+    CREATE TABLE IF NOT EXISTS push_subscriptions (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      endpoint   TEXT UNIQUE NOT NULL,
+      p256dh     TEXT NOT NULL,
+      auth       TEXT NOT NULL,
+      created_at INTEGER NOT NULL
+    );
+
     CREATE INDEX IF NOT EXISTS idx_calls_ts    ON calls(ts);
     CREATE INDEX IF NOT EXISTS idx_calls_model ON calls(model);
     CREATE INDEX IF NOT EXISTS idx_snapshots_ts ON rate_limit_snapshots(ts);
@@ -138,6 +146,19 @@ export function createDb(dbPath = null) {
     insertAlert: db.prepare(`
       INSERT INTO alerts (ts, type, threshold, message)
       VALUES (@ts, @type, @threshold, @message)
+    `),
+
+    saveSubscription: db.prepare(`
+      INSERT OR REPLACE INTO push_subscriptions (endpoint, p256dh, auth, created_at)
+      VALUES (@endpoint, @p256dh, @auth, @created_at)
+    `),
+
+    getSubscriptions: db.prepare(`
+      SELECT endpoint, p256dh, auth FROM push_subscriptions ORDER BY id
+    `),
+
+    deleteSubscription: db.prepare(`
+      DELETE FROM push_subscriptions WHERE endpoint = ?
     `),
   };
 
@@ -274,6 +295,35 @@ export function createDb(dbPath = null) {
     });
   }
 
+  /**
+   * Save a push subscription (upsert by endpoint).
+   * @param {{ endpoint: string, p256dh: string, auth: string }} sub
+   */
+  function saveSubscription(sub) {
+    return stmts.saveSubscription.run({
+      endpoint:   sub.endpoint,
+      p256dh:     sub.p256dh,
+      auth:       sub.auth,
+      created_at: Date.now(),
+    });
+  }
+
+  /**
+   * Get all saved push subscriptions.
+   * @returns {Array<{ endpoint: string, p256dh: string, auth: string }>}
+   */
+  function getSubscriptions() {
+    return stmts.getSubscriptions.all();
+  }
+
+  /**
+   * Remove a push subscription by endpoint.
+   * @param {string} endpoint
+   */
+  function deleteSubscription(endpoint) {
+    return stmts.deleteSubscription.run(endpoint);
+  }
+
   return {
     db,
     insertCall,
@@ -283,5 +333,8 @@ export function createDb(dbPath = null) {
     getStats,
     purgeOld,
     insertAlert,
+    saveSubscription,
+    getSubscriptions,
+    deleteSubscription,
   };
 }

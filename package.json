@@ -1,0 +1,32 @@
+{
+  "name": "sniff",
+  "version": "0.1.0",
+  "description": "A beagle-nosed local proxy that sniffs your Anthropic API traffic before your token budget runs out 🐕",
+  "type": "module",
+  "bin": {
+    "sniff": "./bin/sniff.js"
+  },
+  "scripts": {
+    "start": "node bin/sniff.js start",
+    "dev": "node --watch bin/sniff.js start",
+    "test": "node --test test/**/*.test.js"
+  },
+  "keywords": [
+    "anthropic", "claude", "token", "budget", "rate-limit",
+    "proxy", "monitoring", "ai", "beagle", "sniff"
+  ],
+  "license": "MIT",
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "fastify": "^4",
+    "http-proxy": "^1.18",
+    "better-sqlite3": "^9",
+    "web-push": "^3",
+    "conf": "^12",
+    "open": "^10",
+    "chalk": "^5"
+  },
+  "devDependencies": {
+    "prettier": "^3"
+  }
+}

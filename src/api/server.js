@@ -3,9 +3,9 @@
  * 
  * Serves the REST API on port 4244.
  * Routes: /api/status, /api/calls, /api/stats, /api/events (SSE)
- * Also serves static dashboard files from ~/Projects/sniff/dashboard/
+ * Also serves static dashboard files from ~/Projects/sniff/dashboard/ (package: tollgate)
  * 
- * 🐕 Sniff's command center. Check in here to see what's been sniffed.
+ * 
  */
 
 import Fastify from 'fastify';
@@ -36,16 +36,17 @@ export async function createApiServer(db, emitter, config) {
   });
 
   // ─── CORS (for dashboard running on same origin) ────────────────────────────
-  app.addHook('onSend', async (request, reply) => {
+  app.addHook('onSend', async (request, reply, payload) => {
     reply.header('Access-Control-Allow-Origin',  '*');
     reply.header('Access-Control-Allow-Methods', 'GET, PATCH, DELETE, OPTIONS');
     reply.header('Access-Control-Allow-Headers', 'Content-Type');
+    return payload; // Fastify 5: must return payload in onSend hooks
   });
 
-  app.options('*', async (request, reply) => reply.send());
+  app.options('*', async () => '');
 
   // ─── Static dashboard files ──────────────────────────────────────────────────
-  // Try ~/Projects/sniff/dashboard/ first, fall back to adjacent dashboard/ dir
+  // Try ~/Projects/sniff/dashboard/ (package: tollgate) first, fall back to adjacent dashboard/ dir
   const dashboardPaths = [
     resolve(process.env.HOME || '~', 'Projects', 'sniff', 'dashboard'),
     join(__dirname, '..', '..', 'dashboard'),
@@ -80,7 +81,7 @@ export async function createApiServer(db, emitter, config) {
 
   // Health check
   app.get('/api/health', async (request, reply) => {
-    return reply.send({ status: 'ok', name: 'sniff', version: '0.1.0' });
+    return reply.send({ status: 'ok', name: 'tollgate', version: '0.1.0' });
   });
 
   // Push notification routes
@@ -105,7 +106,7 @@ function minimalDashboard() {
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>🐕 Sniff Dashboard</title>
+  <title>🛂 Tollgate Dashboard</title>
   <style>
     body { font-family: monospace; background: #1a1a2e; color: #e0e0e0; padding: 2rem; }
     h1 { color: #7eb8f7; }
@@ -117,7 +118,7 @@ function minimalDashboard() {
   </style>
 </head>
 <body>
-  <h1>🐕 Sniff is on the trail!</h1>
+  <h1>🛂 Tollgate is running!</h1>
   <p>Dashboard UI (Phase 2) coming soon. API is live:</p>
   
   <div class="card">

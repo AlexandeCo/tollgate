@@ -1,11 +1,9 @@
 #!/usr/bin/env node
 /**
- * bin/sniff.js — Sniff CLI
- * 
+ * bin/tollgate.js — Tollgate CLI
+ *
  * Usage:
- *   sniff start [--port <n>] [--dashboard-port <n>] [--routing] [--warning-threshold <n>]
- * 
- * 🐕 woof woof
+ *   tollgate start [--port <n>] [--dashboard-port <n>] [--routing] [--warning-threshold <n>]
  */
 
 import { parseArgs } from 'util';
@@ -14,10 +12,10 @@ import { applyFlags } from '../src/config.js';
 import { start } from '../src/index.js';
 
 const USAGE = `
-${chalk.bold.green('🐕 Sniff')} — Beagle-nosed Anthropic API proxy
+${chalk.bold.green('🛂 Tollgate')} — Anthropic API proxy with token monitoring
 
 ${chalk.bold('Usage:')}
-  sniff start [options]
+  tollgate start [options]
 
 ${chalk.bold('Options:')}
   --port <n>               Proxy port (default: 4243)
@@ -27,7 +25,7 @@ ${chalk.bold('Options:')}
   --help                   Show this help
 
 ${chalk.bold('Quick start:')}
-  sniff start
+  tollgate start
   export ANTHROPIC_BASE_URL=http://localhost:4243
 
   ${chalk.gray('# Or for Claude Code:')}
@@ -39,11 +37,11 @@ async function main() {
   const { values, positionals } = parseArgs({
     args: process.argv.slice(2),
     options: {
-      port:               { type: 'string'  },
-      'dashboard-port':   { type: 'string'  },
-      routing:            { type: 'boolean' },
-      'warning-threshold':{ type: 'string'  },
-      help:               { type: 'boolean' },
+      port:                { type: 'string'  },
+      'dashboard-port':    { type: 'string'  },
+      routing:             { type: 'boolean' },
+      'warning-threshold': { type: 'string'  },
+      help:                { type: 'boolean' },
     },
     allowPositionals: true,
     strict: false,
@@ -57,7 +55,6 @@ async function main() {
   }
 
   if (command === 'start') {
-    // Map CLI flags to config overrides
     const flags = {
       port:             values.port,
       dashboardPort:    values['dashboard-port'],
@@ -71,10 +68,10 @@ async function main() {
       await start(config);
       // stay alive — servers are running
     } catch (err) {
-      console.error(chalk.red(`\n😤 Sniff couldn't get started: ${err.message}`));
+      console.error(chalk.red(`\n❌ Tollgate couldn't start: ${err.message}`));
       if (err.code === 'EADDRINUSE') {
-        console.error(chalk.yellow(`   Port already in use. Is Sniff already running?`));
-        console.error(chalk.yellow(`   Try: kill $(lsof -ti:${config.proxy.port}) `));
+        console.error(chalk.yellow(`   Port already in use. Is Tollgate already running?`));
+        console.error(chalk.yellow(`   Try: kill $(lsof -ti:${config.proxy.port})`));
       }
       process.exit(1);
     }

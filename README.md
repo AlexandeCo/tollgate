@@ -1,18 +1,10 @@
-# 🐕 Sniff
+# 🛂 Tollgate
 
-> *A beagle-nosed local proxy that sniffs your Anthropic API traffic before your token budget runs out.*
-
-```
-  / \__
- (    @\___       sniff sniff...
- /         O      something smells like a rate limit
-/   (_____/       🔍 tokens_remaining: 12,400
-/_____/   U
-```
+> *A local proxy that intercepts your Anthropic API traffic, monitors token spend, and optionally routes to cheaper models before your budget runs out.*
 
 **You're burning through your Claude Max budget and you have no idea until it's too late.**
 
-Sniff fixes that. It's a zero-config local proxy that sits between your AI tools and Anthropic's API, reads the rate limit headers on every response, and shows you exactly how close you are to the wall — before you hit it.
+Tollgate fixes that. It's a zero-config local proxy that sits between your AI tools and Anthropic's API, reads the rate limit headers on every response, and shows you exactly how close you are to the wall — before you hit it.
 
 Works with **Claude Code, Cursor, Continue.dev, Aider, raw API scripts** — anything that uses `ANTHROPIC_BASE_URL`. No code changes. No account. No data leaves your machine.
 
@@ -21,7 +13,7 @@ Works with **Claude Code, Cursor, Continue.dev, Aider, raw API scripts** — any
 ## Quickstart
 
 ```bash
-npx sniff-proxy start
+npx tollgate start
 ```
 
 Then point your tool at the proxy:
@@ -35,9 +27,9 @@ For Claude Code, add to `~/.claude/settings.json`:
 { "env": { "ANTHROPIC_BASE_URL": "http://localhost:4243" } }
 ```
 
-Open your dashboard: **http://localhost:4244** 🐕
+Open your dashboard: **http://localhost:4244** 🛂
 
-That's it. Sniff is on the trail.
+That's it. Tollgate is open for business.
 
 ---
 
@@ -50,22 +42,22 @@ That's it. Sniff is on the trail.
 | 💰 **Cost per call** | Real $ estimated from Anthropic's pricing per model |
 | 🔍 **Live call feed** | Every API call logged: model, tokens in/out, cost, latency |
 | 📈 **Burn rate** | Tokens/min so you can project when you'll hit the wall |
-| 🐾 **Smart routing** | Auto-downgrades Sonnet→Haiku at 80% budget *(opt-in)* |
-| 🦴 **WOOF alerts** | Browser notifications before you run out |
+| 🚦 **Smart routing** | Auto-downgrades Sonnet→Haiku at 80% budget *(opt-in)* |
+| 🔔 **Push alerts** | Browser notifications before you run out |
 | 💾 **Full history** | SQLite log of every call — query it yourself |
 
 ---
 
 ## Smart Routing (opt-in)
 
-When you're approaching your limit, Sniff can automatically downgrade your model requests to save budget:
+When you're approaching your limit, Tollgate can automatically downgrade your model requests to save budget:
 
 ```bash
-sniff start --routing
+tollgate start --routing
 ```
 
 ```
-🐾 Rerouted: sonnet → haiku (tokens at 81%) — saving your biscuits
+🚦 Rerouted: sonnet → haiku (tokens at 81%) — budget preserved
 ```
 
 The downgrade ladder: `opus → sonnet → haiku`. Transparent to your client — we just swap the model field before forwarding.
@@ -74,8 +66,8 @@ The downgrade ladder: `opus → sonnet → haiku`. Transparent to your client �
 
 ## Why Not LangSmith / Helicone / AgentOps?
 
-| | Sniff | Others |
-|--|-------|--------|
+| | Tollgate | Others |
+|--|----------|--------|
 | Local-first | ✅ Your machine only | ❌ Cloud/SaaS |
 | Zero code changes | ✅ One env var | ❌ Requires SDK |
 | Works with any tool | ✅ Proxy-based | ❌ Per-SDK instrumentation |
@@ -86,34 +78,33 @@ The downgrade ladder: `opus → sonnet → haiku`. Transparent to your client �
 
 ## Dashboard
 
-<img alt="Sniff dashboard preview" src="https://github.com/AlexandeCo/sniff/raw/main/docs/preview.png" width="600">
+<img alt="Tollgate dashboard preview" src="https://github.com/AlexandeCo/sniff/raw/main/docs/preview.png" width="600">
 
-*(screenshot coming soon — the beagle is working on it)*
+*(screenshot coming soon)*
 
 ---
 
 ## Install Globally
 
 ```bash
-npm install -g sniff-proxy
-sniff start
+npm install -g tollgate
+tollgate start
 ```
 
 ## CLI Options
 
 ```
-sniff start              Start proxy + dashboard
-sniff start --routing    Enable smart model routing at 80% budget
-sniff start --port 4243  Custom proxy port (default: 4243)
-sniff start --dash 4244  Custom dashboard port (default: 4244)
-sniff status             Show current rate limit state
+tollgate start              Start proxy + dashboard
+tollgate start --routing    Enable smart model routing at 80% budget
+tollgate start --port 4243  Custom proxy port (default: 4243)
+tollgate start --dashboard-port 4244  Custom dashboard port (default: 4244)
 ```
 
 ---
 
 ## Configuration
 
-Config lives at `~/.config/sniff-proxy/config.json`:
+Config lives at `~/.config/tollgate/config.json`:
 
 ```json
 {
@@ -133,16 +124,6 @@ Config lives at `~/.config/sniff-proxy/config.json`:
   }
 }
 ```
-
----
-
-## Beagle Philosophy 🐕
-
-Beagles don't miss anything. They follow the trail, sound the alarm, and never stop until the job is done.
-
-That's Sniff. It watches every call. It knows when you're getting close. And it'll bark before you hit the wall.
-
-*Good boy.*
 
 ---
 

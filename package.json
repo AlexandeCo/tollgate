@@ -4,7 +4,7 @@
   "description": "Local proxy that intercepts Anthropic API calls, monitors token spend, and optionally routes to cheaper models when budget runs low.",
   "type": "module",
   "bin": {
-    "tollgate": "./bin/tollgate.js"
+    "tollgate": "bin/tollgate.js"
   },
   "scripts": {
     "start": "node bin/tollgate.js start",

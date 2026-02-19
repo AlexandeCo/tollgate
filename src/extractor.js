@@ -4,7 +4,7 @@
  * Pure functions: extract structured data from raw HTTP responses.
  * No side effects. Fully testable in isolation.
  * 
- * 🐕 Sniff's nose — turns raw bytes into useful data.
+ * 🐕 Tollgate's extractor — turns raw bytes into useful data.
  */
 
 import { Transform } from 'stream';

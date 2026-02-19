@@ -1,6 +1,6 @@
 version: '3.8'
 services:
-  sniff:
+  tollgate:
     build: .
     ports:
       - "4243:4243"
@@ -8,6 +8,6 @@ services:
     environment:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
     volumes:
-      - sniff-data:/root/.sniff
+      - tollgate-data:/root/.tollgate
 volumes:
-  sniff-data:
+  tollgate-data:

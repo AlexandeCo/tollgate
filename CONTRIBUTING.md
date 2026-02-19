@@ -1,18 +1,18 @@
-# Contributing to Sniff 🐕
+# Contributing to Tollgate 🛂
 
-First off — thanks for wanting to help. Sniff is a small, focused tool and we want to keep it that way.
+First off — thanks for wanting to help. Tollgate is a small, focused tool and we want to keep it that way.
 
 ## The One Rule
 
-**Don't break the zero-config promise.** If contributing requires a user to do more than `npx sniff start` + set one env var, it's too complex. Sniff's superpower is that it just works.
+**Don't break the zero-config promise.** If contributing requires a user to do more than `npx tollgate start` + set one env var, it's too complex. Sniff's superpower is that it just works.
 
 ## Getting Started
 
 ```bash
-git clone https://github.com/AlexandeCo/sniff.git
-cd sniff
+git clone https://github.com/AlexandeCo/tollgate.git
+cd tollgate
 npm install
-node bin/sniff.js start
+node bin/tollgate.js start
 ```
 
 Set `ANTHROPIC_BASE_URL=http://localhost:4243` in your Claude client of choice and make a call. Watch the 🔍 logs appear.
@@ -36,13 +36,13 @@ Set `ANTHROPIC_BASE_URL=http://localhost:4243` in your Claude client of choice a
 1. Fork it
 2. Branch from `main`
 3. Keep it focused — one thing per PR
-4. Test that `sniff start` still works end-to-end
+4. Test that `tollgate start` still works end-to-end
 5. Open the PR with a clear description of what and why
 
-## Beagle Code Style 🐕
+## Code Style
 
-- Use the beagle personality in any user-facing output (`chalk` for colors)
-- Error messages should be clear, not cryptic — beagles are friendly
+- Keep output clear and human-friendly (`chalk` for colors)
+- Error messages should be clear, not cryptic
 - Comments are welcome, especially in `src/proxy.js` (it's the tricky bit)
 
 ---

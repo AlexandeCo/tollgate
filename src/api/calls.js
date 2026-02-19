@@ -4,7 +4,7 @@
  * Returns a paginated call log.
  * Supports ?limit and ?since (unix ms) query params.
  * 
- * 🐕 Every bone Sniff found, in order.
+ * 🐕 Every API call logged, in order.
  */
 
 /**

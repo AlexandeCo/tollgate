@@ -4,7 +4,7 @@
  * Aggregates call data for a time window: 1h, 24h, 7d.
  * Returns totals + per-model breakdown.
  * 
- * 🐕 Sniff's scorecard — how far did we run today?
+ * 🐕 Tollgate's scorecard — how far did we run today?
  */
 
 const WINDOWS = {

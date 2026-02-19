@@ -3,7 +3,7 @@
  * 
  * All prices are per 1 million tokens (USD).
  * 
- * 🐕 Sniff knows what each bone costs.
+ * 🐕 Tollgate's pricing data.
  * Update this table with each Claude release — it's the nose that knows.
  */
 

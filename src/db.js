@@ -1,10 +1,10 @@
 /**
- * db.js — SQLite layer for Sniff
+ * db.js — SQLite layer for Tollgate
  * 
  * Uses better-sqlite3 for synchronous, fast local storage.
- * Database lives at ~/.sniff/sniff.db
+ * Database lives at ~/.tollgate/tollgate.db
  * 
- * 🐕 Every bone Sniff finds gets buried here for later.
+ * 🐕 Every call Tollgate captures gets buried here for later.
  */
 
 import Database from 'better-sqlite3';
@@ -16,11 +16,11 @@ import { homedir } from 'os';
  * Get the default database path
  */
 function getDefaultDbPath() {
-  const dir = join(homedir(), '.sniff');
+  const dir = join(homedir(), '.tollgate');
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true });
   }
-  return join(dir, 'sniff.db');
+  return join(dir, 'tollgate.db');
 }
 
 /**

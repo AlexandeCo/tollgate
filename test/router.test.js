@@ -228,10 +228,10 @@ test('DEFAULT_LADDER maps all sonnet variants to haiku', () => {
 test('buildRoutingHeaders() returns correct x-sniff-* headers', () => {
   const headers = buildRoutingHeaders('claude-opus-4-6', 'claude-sonnet-4-6', 82);
 
-  assert.equal(headers['x-sniff-routed'],          'true');
-  assert.equal(headers['x-sniff-original-model'],  'claude-opus-4-6');
-  assert.equal(headers['x-sniff-routed-model'],    'claude-sonnet-4-6');
-  assert.equal(headers['x-sniff-reason'],          'token-threshold-82');
+  assert.equal(headers['x-tollgate-routed'],          'true');
+  assert.equal(headers['x-tollgate-original-model'],  'claude-opus-4-6');
+  assert.equal(headers['x-tollgate-routed-model'],    'claude-sonnet-4-6');
+  assert.equal(headers['x-tollgate-reason'],          'token-threshold-82');
 });
 
 // ─── modelTier() ─────────────────────────────────────────────────────────────

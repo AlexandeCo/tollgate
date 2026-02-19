@@ -1,10 +1,10 @@
 /**
- * index.js — Sniff main entry point
+ * index.js — Tollgate main entry point
  * 
  * Starts the proxy server (port 4243) and the API/dashboard server (port 4244).
  * Wires them together via EventEmitter.
  * 
- * 🐕 Sniff is on the trail!
+ * 🛂 Tollgate is running!
  */
 
 import { EventEmitter } from 'events';
@@ -16,7 +16,7 @@ import { createApiServer } from './api/server.js';
 import { initPush }        from './push.js';
 
 /**
- * Start Sniff.
+ * Start Tollgate.
  * 
  * @param {object} config - full config (from getConfig() + applyFlags())
  * @returns {Promise<{ proxyServer, apiServer, db, emitter }>}
@@ -40,7 +40,7 @@ export async function start(config) {
     const purged = db.purgeOld(retentionDays);
     if (purged.callsDeleted > 0 || purged.snapshotsDeleted > 0) {
       console.log(chalk.gray(
-        `🗑️  Sniff cleaned up: ${purged.callsDeleted} old calls, ${purged.snapshotsDeleted} old snapshots`
+        `🗑️  Tollgate cleaned up: ${purged.callsDeleted} old calls, ${purged.snapshotsDeleted} old snapshots`
       ));
     }
   } catch (err) {
@@ -69,7 +69,7 @@ export async function start(config) {
 
   // 🐕 Startup banner
   console.log('');
-  console.log(chalk.bold.green('🐕 Sniff is on the trail!'));
+  console.log(chalk.bold.green('🛂 Tollgate is running!'));
   console.log(`   ${chalk.cyan('Proxy:')}     ${chalk.white(`http://localhost:${proxyPort}`)}  ${chalk.gray('(point ANTHROPIC_BASE_URL here)')}`);
   console.log(`   ${chalk.cyan('Dashboard:')} ${chalk.white(`http://localhost:${dashboardPort}`)}`);
   console.log('');
@@ -95,7 +95,7 @@ export async function start(config) {
   // Graceful shutdown handler
   async function shutdown() {
     console.log('');
-    console.log(chalk.bold.cyan('🐕 Sniff is off duty. Good boy today.'));
+    console.log(chalk.bold.cyan('🛂 Tollgate is off duty.'));
     console.log(
       chalk.gray(
         `   Session: ${sessionCalls} calls · ` +

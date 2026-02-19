@@ -1,10 +1,10 @@
 /**
- * push.js — Web Push notification support for Sniff
+ * push.js — Web Push notification support for Tollgate
  *
  * Generates VAPID keys on first run (stored in conf), manages subscriptions
  * in SQLite, and fires push notifications when alerts trigger.
  *
- * 🐕 Sniff can bark even when you're not watching the dashboard!
+ * 🛂 Tollgate can alert even when you're not watching the dashboard!
  */
 
 import webpush from 'web-push';
@@ -28,7 +28,7 @@ export function initPush(db) {
   }
 
   webpush.setVapidDetails(
-    'mailto:sniff@localhost',
+    'mailto:tollgate@localhost',
     vapidKeys.publicKey,
     vapidKeys.privateKey
   );
@@ -97,13 +97,13 @@ export async function notifyAll(type, message) {
   if (!subs || subs.length === 0) return;
 
   const titleMap = {
-    token_warning:  '🦴 Sniff Warning',
-    token_critical: '🚨 Sniff Critical',
+    token_warning:  '⚠️ Tollgate Warning',
+    token_critical: '🚨 Tollgate Critical',
     rate_limit_hit: '🛑 Rate Limit Hit',
   };
 
   const payload = {
-    title: titleMap[type] || '🐕 Sniff Alert',
+    title: titleMap[type] || '🛂 Tollgate Alert',
     body:  message,
     type,
   };

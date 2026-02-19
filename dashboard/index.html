@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sniff 🐕 — Token Monitor</title>
+  <title>🛂 Tollgate — Token Monitor</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -643,9 +643,9 @@
   <!-- Header -->
   <header>
     <div class="header-left">
-      <div class="header-logo">🐕</div>
+      <div class="header-logo">🛂</div>
       <div>
-        <div class="header-title">Sniff</div>
+        <div class="header-title">Tollgate</div>
         <div class="header-sub">Token Monitor</div>
       </div>
     </div>
@@ -753,12 +753,12 @@
           <!-- empty state -->
           <div class="empty-state" id="empty-state">
             <pre class="ascii-art">  / \__
- (    @\___    sniff sniff...
+ (    @\___    monitoring...
  /         O
 /   (_____/
 /_____/   U</pre>
-            <div class="empty-title">Sniff is on the trail...</div>
-            <div class="empty-sub">Waiting for the first API call.<br>Point your client at Sniff:</div>
+            <div class="empty-title">Tollgate is running...</div>
+            <div class="empty-sub">Waiting for the first API call.<br>Point your client at Tollgate:</div>
             <div class="empty-code">ANTHROPIC_BASE_URL=http://localhost:4243</div>
           </div>
         </div>
@@ -769,7 +769,7 @@
 
   <!-- Footer -->
   <footer>
-    <span>🐕 Sniff is on the trail · proxy: localhost:4243</span>
+    <span>🛂 Tollgate · proxy: localhost:4243</span>
     <span id="footer-uptime">dashboard: localhost:4244</span>
   </footer>
 
@@ -912,7 +912,7 @@
         alertText.textContent = `🦴 WOOF! ${Math.round(pct)}% consumed — routing to Haiku to save your biscuits`;
       } else if (alerts.warningFired || pct >= 80) {
         banner.className = 'warning';
-        alertText.textContent = `🦴 WOOF! ${Math.round(pct)}% consumed — getting close, sniff sniff`;
+        alertText.textContent = `🚦 ${Math.round(pct)}% consumed — budget running low`;
       } else {
         banner.className = '';
         banner.style.display = 'none';
@@ -988,12 +988,12 @@
           feed.innerHTML = `
             <div class="empty-state" id="empty-state">
               <pre class="ascii-art">  / \\__
- (    @\\___    sniff sniff...
+ (    @\\___    monitoring...
  /         O
 /   (_____/
 /_____/   U</pre>
-              <div class="empty-title">Sniff is on the trail...</div>
-              <div class="empty-sub">Waiting for the first API call.<br>Point your client at Sniff:</div>
+              <div class="empty-title">Tollgate is running...</div>
+              <div class="empty-sub">Waiting for the first API call.<br>Point your client at Tollgate:</div>
               <div class="empty-code">ANTHROPIC_BASE_URL=http://localhost:4243</div>
             </div>`;
         }

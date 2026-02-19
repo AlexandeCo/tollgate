@@ -4,7 +4,7 @@
  * Keeps a live Set of connected SSE clients.
  * All proxy events are broadcast here in real-time.
  * 
- * 🐕 Sniff barks to everyone listening on the trail.
+ * 🐕 Tollgate broadcasts to everyone listening on the trail.
  */
 
 // Set of connected SSE response objects
@@ -69,7 +69,7 @@ export function eventsHandler(request, reply) {
   });
 
   // Send an initial heartbeat so the client knows it's connected
-  res.write('event: connected\ndata: {"status":"sniffing"}\n\n');
+  res.write('event: connected\ndata: {"status":"monitoring"}\n\n');
 
   // Register this client
   addClient(res);

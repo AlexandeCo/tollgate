@@ -1,10 +1,10 @@
 /**
- * config.js — Sniff configuration
+ * config.js — Tollgate configuration
  * 
  * Loads and saves config via the `conf` package.
- * Stored at ~/.config/sniff/config.json
+ * Stored at ~/.config/tollgate/config.json
  * 
- * 🐕 A beagle never forgets where it buried its bones.
+ * 🐕 A proxy never forgets where it buried its bones.
  */
 
 import Conf from 'conf';
@@ -33,14 +33,14 @@ const defaults = {
     pushEnabled: false,
   },
   db: {
-    path: null, // null = use default (~/.sniff/sniff.db)
+    path: null, // null = use default (~/.tollgate/tollgate.db)
     retentionDays: 30,
   },
 };
 
 // Initialize conf store with defaults
 const store = new Conf({
-  projectName: 'sniff',
+  projectName: 'tollgate',
   defaults,
   schema: {
     proxy: { type: 'object' },

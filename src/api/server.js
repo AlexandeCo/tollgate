@@ -27,7 +27,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
  * 
  * @param {object} db       - database instance from createDb()
  * @param {EventEmitter} emitter - event emitter (same as proxy uses)
- * @param {object} config   - full sniff config
+ * @param {object} config   - full tollgate config
  * @returns {FastifyInstance}
  */
 export async function createApiServer(db, emitter, config) {

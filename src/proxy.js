@@ -1,11 +1,11 @@
 /**
- * proxy.js — The heart of Sniff
+ * proxy.js — The heart of Tollgate
  * 
  * Creates an HTTP proxy that forwards requests to api.anthropic.com,
  * taps the response to extract headers + usage, persists to SQLite,
  * and emits events for the dashboard.
  * 
- * 🐕 Sniff's nose to the ground — every trail documented.
+ * 🐕 Tollgate's extractor to the ground — every trail documented.
  */
 
 import httpProxy from 'http-proxy';
@@ -24,11 +24,11 @@ const TARGET = 'https://api.anthropic.com';
 const _firedAlerts = new Set();
 
 /**
- * Create the Sniff proxy server.
+ * Create the Tollgate proxy server.
  * 
  * @param {object} db - database instance from createDb()
  * @param {EventEmitter} emitter - event emitter for SSE broadcasts
- * @param {object} config - full sniff config
+ * @param {object} config - full tollgate config
  * @returns {http.Server} - the proxy HTTP server
  */
 export function createProxy(db, emitter, config) {
@@ -42,7 +42,7 @@ export function createProxy(db, emitter, config) {
 
   // Handle proxy-level errors (connection refused, DNS failures, etc.)
   proxy.on('error', (err, req, res) => {
-    console.error(chalk.red(`😤 Sniff lost the trail: ${err.message}`));
+    console.error(chalk.red(`❌ Tollgate error: ${err.message}`));
     if (!res.headersSent) {
       res.writeHead(502, { 'Content-Type': 'application/json' });
     }
@@ -58,9 +58,9 @@ export function createProxy(db, emitter, config) {
    * 4. Emit SSE events
    */
   proxy.on('proxyRes', (proxyRes, req, res) => {
-    const startTime      = req._sniffStartTime   || Date.now();
-    const requestedModel = req._sniffModel        || 'unknown';
-    const routedFrom     = req._sniffRoutedFrom   || null;
+    const startTime      = req._tgStartTime   || Date.now();
+    const requestedModel = req._tgModel        || 'unknown';
+    const routedFrom     = req._tgRoutedFrom   || null;
     const streamFlag     = isStreaming(proxyRes.headers);
 
     // Step 1: Extract rate limit snapshot from response headers
@@ -78,8 +78,8 @@ export function createProxy(db, emitter, config) {
 
     // Build response headers — filter hop-by-hop, add routing headers if needed
     const outHeaders = filterHeaders(proxyRes.headers);
-    if (req._sniffRoutingHeaders) {
-      Object.assign(outHeaders, req._sniffRoutingHeaders);
+    if (req._tgRoutingHeaders) {
+      Object.assign(outHeaders, req._tgRoutingHeaders);
     }
 
     // Copy status code and headers to client response
@@ -90,7 +90,7 @@ export function createProxy(db, emitter, config) {
 
     if (errorCode === '429') {
       const resetAt = snapshot.tokensReset || snapshot.requestsReset || 'unknown';
-      console.log(chalk.red(`😤 Sniff lost the scent. Rate limit hit. Leashing up until reset.`));
+      console.log(chalk.red(`⛔ Rate limit hit. Pausing until reset.`));
       console.log(chalk.red(`   Reset at: ${resetAt}`));
       emitter.emit('alert', {
         type:    'rate_limit_hit',
@@ -169,7 +169,7 @@ export function createProxy(db, emitter, config) {
 
   // Create the HTTP server that handles incoming requests
   const server = http.createServer((req, res) => {
-    req._sniffStartTime = Date.now();
+    req._tgStartTime = Date.now();
 
     // Buffer the request body so we can inspect + possibly rewrite it
     const reqChunks = [];
@@ -189,7 +189,7 @@ export function createProxy(db, emitter, config) {
       }
 
       // Store model name before potential routing
-      req._sniffModel = parsedBody?.model || 'unknown';
+      req._tgModel = parsedBody?.model || 'unknown';
 
       // Apply smart routing if enabled and we have a JSON body
       if (parsedBody && config?.routing?.enabled) {
@@ -197,9 +197,9 @@ export function createProxy(db, emitter, config) {
         const { body, routedFrom, routedTo, usedPercent } = maybeReroute(parsedBody, latestSnapshot, config);
 
         if (routedFrom && routedTo) {
-          req._sniffModel        = routedTo;
-          req._sniffRoutedFrom   = routedFrom;
-          req._sniffRoutingHeaders = buildRoutingHeaders(routedFrom, routedTo, usedPercent);
+          req._tgModel        = routedTo;
+          req._tgRoutedFrom   = routedFrom;
+          req._tgRoutingHeaders = buildRoutingHeaders(routedFrom, routedTo, usedPercent);
 
           console.log(
             chalk.yellow(`🐾 Rerouted: ${modelTier(routedFrom)} → ${modelTier(routedTo)} `) +
@@ -253,7 +253,7 @@ function persistAndEmit(db, emitter, callRecord, model, costUsd, latencyMs) {
     : '';
 
   console.log(
-    chalk.cyan('🔍 sniff') + '  ' +
+    chalk.cyan('🛂 tollgate') + '  ' +
     chalk.white(model) +
     routeStr + '  ' +
     chalk.gray(`${inFmt} in / ${outFmt} out`) + '  ' +
@@ -318,7 +318,7 @@ function checkAlerts(snapshot, config, emitter, db) {
   // Reset detection: if usage dropped below warning threshold, clear dedup
   if (usedPercent < warningPct && _firedAlerts.size > 0) {
     _firedAlerts.clear();
-    console.log(chalk.green(`🐕 Fresh trail! Token budget restored. Sniff is back on the hunt.`));
+    console.log(chalk.green(`✅ Token budget restored. Tollgate resuming.`));
     emitter.emit('reset', { remaining, usedPercent, message: 'Token budget restored.' });
   }
 }

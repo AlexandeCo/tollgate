@@ -5,7 +5,7 @@
  * POST /api/push/subscribe  — saves a push subscription
  * DELETE /api/push/subscribe — removes a push subscription
  *
- * 🐕 Sniff's bark delivery service.
+ * 🐕 Tollgate's notification service.
  */
 
 import { getVapidPublicKey, registerSubscription, unregisterSubscription } from '../push.js';

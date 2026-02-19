@@ -4,7 +4,7 @@
  * Returns current rate limit state from the latest snapshot.
  * Computes usedPercent fields for easy dashboard consumption.
  * 
- * 🐕 Sniff's current read on the trail.
+ * 🐕 Tollgate's current status.
  */
 
 // Known token limit for percent calculations (Claude Max typical window)
@@ -41,7 +41,7 @@ export function createStatusHandler(db) {
           routingActive: false,
           warningFired:  false,
         },
-        sniffStatus: 'waiting for first API call — point ANTHROPIC_BASE_URL at me!',
+        tollgateStatus: 'waiting for first API call — point ANTHROPIC_BASE_URL at me!',
       });
     }
 

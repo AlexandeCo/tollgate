@@ -4,7 +4,7 @@
  * Pure function: takes a request body + current snapshot + config,
  * returns (possibly modified) request body.
  * 
- * 🐕 When Sniff smells trouble ahead, he takes the safer path.
+ * 🚦 When Tollgate detects budget pressure, he takes the safer path.
  * Saves your biscuits before you run out.
  */
 
@@ -89,7 +89,7 @@ export function shouldRoute(latestSnapshot, config) {
  * 
  * @param {object} requestBody - the parsed JSON request body
  * @param {object|null} latestSnapshot - latest rate limit snapshot from db
- * @param {object} config - full sniff config
+ * @param {object} config - full tollgate config
  * @returns {{ body: object, routedFrom: string|null, routedTo: string|null, usedPercent: number|null }}
  */
 export function maybeReroute(requestBody, latestSnapshot, config) {
@@ -158,10 +158,10 @@ function findDowngrade(model, ladder) {
  */
 export function buildRoutingHeaders(originalModel, routedModel, usedPercent) {
   return {
-    'x-sniff-routed':         'true',
-    'x-sniff-original-model': originalModel,
-    'x-sniff-routed-model':   routedModel,
-    'x-sniff-reason':         `token-threshold-${usedPercent}`,
+    'x-tollgate-routed':         'true',
+    'x-tollgate-original-model': originalModel,
+    'x-tollgate-routed-model':   routedModel,
+    'x-tollgate-reason':         `token-threshold-${usedPercent}`,
   };
 }
 

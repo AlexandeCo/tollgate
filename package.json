@@ -1,6 +1,6 @@
 {
   "name": "tollgate",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Local proxy that intercepts Anthropic API calls, monitors token spend, and optionally routes to cheaper models when budget runs low.",
   "type": "module",
   "bin": {
